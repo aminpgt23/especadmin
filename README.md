@@ -1,5 +1,5 @@
 # E-Spec Manager 📋⚡
-
+for testing aplication : https://especadminfrontend.vercel.app/dashboard
 **Production Spec Management System** — Full-stack app built with React + Express + MySQL.
 
 ---
