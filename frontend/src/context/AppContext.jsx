@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
 const AppContext = createContext(null);
@@ -15,17 +14,15 @@ API.interceptors.request.use(cfg => {
 
 export function AppProvider({ children }) {
   const [user, setUser] = useState(() => {
-    try { 
+    try {
       const saved = localStorage.getItem('user');
-      return saved ? JSON.parse(saved) : null; 
+      return saved ? JSON.parse(saved) : null;
     } catch { return null; }
   });
-  
+
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  const [socket, setSocket] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [alerts, setAlerts] = useState([]);
-  const [onlineUsers, setOnlineUsers] = useState([]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -52,73 +49,24 @@ export function AppProvider({ children }) {
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    if (socket) socket.disconnect();
     setUser(null);
-    setSocket(null);
     setNotifications([]);
     setAlerts([]);
     toast('Berhasil logout');
   };
 
-  useEffect(() => {
+  // Fungsi untuk mengambil notifikasi dari API (yang akan dibuat di backend)
+  const fetchNotifications = useCallback(async () => {
     if (!user) return;
-
-    const s = io('https://especadminbackend.vercel.app/', { 
-      transports: ['polling', 'websocket'],
-      reconnection: true 
-    });
-
-    s.on('connect_error', (err) => {
-      console.error('Socket connection error:', err);
-    });
-
-    s.on('connect', () => {
-      console.log('Socket connected');
-      s.emit('register', { nip: user.nip, role: user.role, name: user.name });
-    });
-
-    s.on('new_spec_alert', (data) => {
-      if (user.role === 'ppc' || user.role === 'admin') {
-        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-        toast(`📋 ${data.message}`, { duration: 6000 });
-      }
-    });
-
-    s.on('unrelease_alert', (data) => {
-      if (user.role === 'tech' || user.role === 'admin') {
-        setNotifications(prev => [{ ...data, id: Date.now(), read: false, urgent: true }, ...prev]);
-        toast.error(`⚠️ ${data.message}`, { duration: 8000 });
-      }
-    });
-
-    s.on('release_notification', (data) => {
-      if (user.role === 'tech' || user.role === 'admin') {
-        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-        toast.success(`✅ ${data.message}`);
-      }
-    });
-
-    s.on('coret_notification', (data) => {
-      if (user.role === 'ppc' || user.role === 'admin') {
-        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-        toast(`🎨 ${data.message}`);
-      }
-    });
-
-    s.on('tagged_in_message', (data) => {
-      setNotifications(prev => [
-        { type: 'tag', message: `Anda ditandai dalam spec #${data.spec_id}`, id: Date.now(), read: false, data },
-        ...prev
-      ]);
-      toast(`🏷️ Anda ditandai dalam pesan`, { icon: '📌' });
-    });
-
-    s.on('users_online', setOnlineUsers);
-
-    setSocket(s);
-    return () => s.disconnect();
+    try {
+      const { data } = await API.get('/notifications'); // <-- buat endpoint ini
+      setNotifications(data);
+    } catch (err) {
+      console.error("Gagal mengambil notifikasi:", err);
+    }
   }, [user]);
 
+  // Fungsi untuk mengambil alert dari API (sudah ada)
   const fetchAlerts = useCallback(async () => {
     if (!user) return;
     try {
@@ -129,7 +77,22 @@ export function AppProvider({ children }) {
     }
   }, [user]);
 
-  useEffect(() => { fetchAlerts(); }, [fetchAlerts]);
+  // Jalankan polling setiap 10 detik untuk notifikasi dan alert
+  useEffect(() => {
+    if (!user) return;
+
+    // Panggil sekali saat mount
+    fetchNotifications();
+    fetchAlerts();
+
+    // Interval polling
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchAlerts();
+    }, 10000); // 10 detik
+
+    return () => clearInterval(interval);
+  }, [user, fetchNotifications, fetchAlerts]);
 
   const markNotifRead = (id) => {
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
@@ -150,10 +113,10 @@ export function AppProvider({ children }) {
     <AppContext.Provider value={{
       user, login, logout,
       theme, toggleTheme,
-      socket, notifications, alerts, unreadCount,
+      notifications, alerts, unreadCount,
       markNotifRead, markAllRead, clearAllNotifications,
-      fetchAlerts,
-      onlineUsers, API
+      fetchAlerts,   // jika masih diperlukan
+      API
     }}>
       {children}
     </AppContext.Provider>
