@@ -21,8 +21,9 @@ export function AppProvider({ children }) {
   });
 
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'light');
-  const [notifications, setNotifications] = useState([]);
   const [alerts, setAlerts] = useState([]);
+  // Notifications untuk sementara tidak digunakan (isi array kosong)
+  const [notifications] = useState([]);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -50,21 +51,9 @@ export function AppProvider({ children }) {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     setUser(null);
-    setNotifications([]);
     setAlerts([]);
     toast('Berhasil logout');
   };
-
-  // Fungsi untuk mengambil notifikasi dari API (yang akan dibuat di backend)
-  const fetchNotifications = useCallback(async () => {
-    if (!user) return;
-    try {
-      const { data } = await API.get('/notifications'); // <-- buat endpoint ini
-      setNotifications(data);
-    } catch (err) {
-      console.error("Gagal mengambil notifikasi:", err);
-    }
-  }, [user]);
 
   // Fungsi untuk mengambil alert dari API (sudah ada)
   const fetchAlerts = useCallback(async () => {
@@ -77,37 +66,24 @@ export function AppProvider({ children }) {
     }
   }, [user]);
 
-  // Jalankan polling setiap 10 detik untuk notifikasi dan alert
+  // Jalankan polling hanya untuk alert setiap 10 detik
   useEffect(() => {
     if (!user) return;
 
-    // Panggil sekali saat mount
-    fetchNotifications();
-    fetchAlerts();
-
-    // Interval polling
-    const interval = setInterval(() => {
-      fetchNotifications();
-      fetchAlerts();
-    }, 10000); // 10 detik
+    fetchAlerts(); // panggil sekali saat mount
+    const interval = setInterval(fetchAlerts, 10000); // setiap 10 detik
 
     return () => clearInterval(interval);
-  }, [user, fetchNotifications, fetchAlerts]);
+  }, [user, fetchAlerts]);
 
-  const markNotifRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
+  const markNotifRead = () => {}; // tidak digunakan, tapi tetap ada agar tidak error di komponen yang memanggil
+  const markAllRead = () => {};
   const clearAllNotifications = useCallback(() => {
-    setNotifications([]);
     setAlerts([]);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length + alerts.length;
+  // Notifikasi selalu kosong
+  const unreadCount = alerts.length;
 
   return (
     <AppContext.Provider value={{
@@ -115,7 +91,7 @@ export function AppProvider({ children }) {
       theme, toggleTheme,
       notifications, alerts, unreadCount,
       markNotifRead, markAllRead, clearAllNotifications,
-      fetchAlerts,   // jika masih diperlukan
+      fetchAlerts,
       API
     }}>
       {children}
