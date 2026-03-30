@@ -108,9 +108,18 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
-  console.log(`🚀 E-Spec Server running on port ${PORT}`);
-});
+// const PORT = process.env.PORT || 5000;
+// server.listen(PORT, () => {
+//   console.log(`🚀 E-Spec Server running on port ${PORT}`);
+// });
 
-module.exports = { app, io };
+// module.exports = { app, io };
+// If you want to keep the app.listen for local development, you can conditionally run it:
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(5000, () => {
+    console.log('Server running on port 5000');
+  });
+}
+
+// Export the Express app for Vercel
+module.exports = app;
