@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-// import { io } from 'socket.io-client';
+import { io } from 'socket.io-client';
 import toast from 'react-hot-toast';
 
 const AppContext = createContext(null);
@@ -63,61 +63,61 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!user) return;
 
-  //   const s = io('https://especadminbackend.vercel.app/', { 
-  //     transports: ['polling', 'websocket'],
-  //     reconnection: true 
-  //   });
+    const s = io('https://especadminbackend.vercel.app/', { 
+      transports: ['polling', 'websocket'],
+      reconnection: true 
+    });
 
-  //   s.on('connect_error', (err) => {
-  //     console.error('Socket connection error:', err);
-  //   });
+    s.on('connect_error', (err) => {
+      console.error('Socket connection error:', err);
+    });
 
-  //   s.on('connect', () => {
-  //     console.log('Socket connected');
-  //     s.emit('register', { nip: user.nip, role: user.role, name: user.name });
-  //   });
+    s.on('connect', () => {
+      console.log('Socket connected');
+      s.emit('register', { nip: user.nip, role: user.role, name: user.name });
+    });
 
-  //   s.on('new_spec_alert', (data) => {
-  //     if (user.role === 'ppc' || user.role === 'admin') {
-  //       setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-  //       toast(`📋 ${data.message}`, { duration: 6000 });
-  //     }
-  //   });
+    s.on('new_spec_alert', (data) => {
+      if (user.role === 'ppc' || user.role === 'admin') {
+        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
+        toast(`📋 ${data.message}`, { duration: 6000 });
+      }
+    });
 
-  //   s.on('unrelease_alert', (data) => {
-  //     if (user.role === 'tech' || user.role === 'admin') {
-  //       setNotifications(prev => [{ ...data, id: Date.now(), read: false, urgent: true }, ...prev]);
-  //       toast.error(`⚠️ ${data.message}`, { duration: 8000 });
-  //     }
-  //   });
+    s.on('unrelease_alert', (data) => {
+      if (user.role === 'tech' || user.role === 'admin') {
+        setNotifications(prev => [{ ...data, id: Date.now(), read: false, urgent: true }, ...prev]);
+        toast.error(`⚠️ ${data.message}`, { duration: 8000 });
+      }
+    });
 
-  //   s.on('release_notification', (data) => {
-  //     if (user.role === 'tech' || user.role === 'admin') {
-  //       setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-  //       toast.success(`✅ ${data.message}`);
-  //     }
-  //   });
+    s.on('release_notification', (data) => {
+      if (user.role === 'tech' || user.role === 'admin') {
+        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
+        toast.success(`✅ ${data.message}`);
+      }
+    });
 
-  //   s.on('coret_notification', (data) => {
-  //     if (user.role === 'ppc' || user.role === 'admin') {
-  //       setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
-  //       toast(`🎨 ${data.message}`);
-  //     }
-  //   });
+    s.on('coret_notification', (data) => {
+      if (user.role === 'ppc' || user.role === 'admin') {
+        setNotifications(prev => [{ ...data, id: Date.now(), read: false }, ...prev]);
+        toast(`🎨 ${data.message}`);
+      }
+    });
 
-  //   s.on('tagged_in_message', (data) => {
-  //     setNotifications(prev => [
-  //       { type: 'tag', message: `Anda ditandai dalam spec #${data.spec_id}`, id: Date.now(), read: false, data },
-  //       ...prev
-  //     ]);
-  //     toast(`🏷️ Anda ditandai dalam pesan`, { icon: '📌' });
-  //   });
+    s.on('tagged_in_message', (data) => {
+      setNotifications(prev => [
+        { type: 'tag', message: `Anda ditandai dalam spec #${data.spec_id}`, id: Date.now(), read: false, data },
+        ...prev
+      ]);
+      toast(`🏷️ Anda ditandai dalam pesan`, { icon: '📌' });
+    });
 
-  //   s.on('users_online', setOnlineUsers);
+    s.on('users_online', setOnlineUsers);
 
-  //   setSocket(s);
-  //   return () => s.disconnect();
-  // }, [user]);
+    setSocket(s);
+    return () => s.disconnect();
+  }, [user]);
 
   const fetchAlerts = useCallback(async () => {
     if (!user) return;
