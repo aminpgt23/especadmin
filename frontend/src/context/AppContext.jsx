@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const AppContext = createContext(null);
 
-const API = axios.create({ baseURL: 'https://especadminbackend-oeamynts-projects.vercel.app/api' });
+const API = axios.create({ baseURL: 'https://especadminbackend.vercel.app/api' });
 
 API.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token');
