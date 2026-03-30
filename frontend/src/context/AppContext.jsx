@@ -63,7 +63,7 @@ export function AppProvider({ children }) {
   useEffect(() => {
     if (!user) return;
 
-    const s = io('http://localhost:5000', { 
+    const s = io('https://especadminbackend.vercel.app/', { 
       transports: ['polling', 'websocket'],
       reconnection: true 
     });
